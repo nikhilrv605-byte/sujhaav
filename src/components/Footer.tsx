@@ -33,10 +33,8 @@ export default function Footer() {
               Navigation
             </span>
             <div className="flex flex-col gap-2.5">
-              <button onClick={() => handleScrollTo("about")} className="text-gray-400 hover:text-white transition-colors text-left text-sm cursor-pointer">Vision</button>
-              <button onClick={() => handleScrollTo("features")} className="text-gray-400 hover:text-white transition-colors text-left text-sm cursor-pointer">Features</button>
-              <button onClick={() => handleScrollTo("products")} className="text-gray-400 hover:text-white transition-colors text-left text-sm cursor-pointer">Curation</button>
-              <button onClick={() => handleScrollTo("services")} className="text-gray-400 hover:text-white transition-colors text-left text-sm cursor-pointer">Services</button>
+              <button onClick={() => handleScrollTo("hero")} className="text-gray-400 hover:text-white transition-colors text-left text-sm cursor-pointer">Home</button>
+              <button onClick={() => handleScrollTo("advisor")} className="text-gray-400 hover:text-white transition-colors text-left text-sm cursor-pointer">AI Advisor</button>
             </div>
           </div>
 
@@ -56,8 +54,8 @@ export default function Footer() {
               Contact
             </span>
             <div className="flex flex-col gap-2.5 text-sm text-gray-400 font-light">
-              <p>Email: hello@sujhaav.ai</p>
-              <p>Location: New Delhi, India</p>
+              <p>Email: nikhilrv605@gmail.com</p>
+              <p>Location: Mumbai, India</p>
               <div className="flex items-center gap-4 mt-3">
                 <a href="#" className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-indigo-500/40 hover:bg-white/[0.02] transition-all">
                   TW

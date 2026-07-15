@@ -34,11 +34,8 @@ export default function Navbar() {
   }, []);
 
   const navItems = [
-    { label: "Vision", target: "about" },
-    { label: "Features", target: "features" },
-    { label: "Curation", target: "products" },
-    { label: "Testimonials", target: "testimonials" },
-    { label: "Advisor", target: "advisor" },
+    { label: "Home", target: "hero" },
+    { label: "AI Advisor", target: "advisor" },
   ];
 
   const handleScrollTo = (id: string) => {

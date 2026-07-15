@@ -7,86 +7,171 @@ import * as THREE from "three";
 import { motion } from "framer-motion";
 
 function ParticleSwarm() {
-  const pointsRef = useRef<THREE.Points>(null);
-  const count = 1500;
+  const sphereRef = useRef<THREE.Points>(null);
+  const ringARef = useRef<THREE.Points>(null);
+  const ringBRef = useRef<THREE.Points>(null);
 
-  const [positions, initialPositions] = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    const initialPos = new Float32Array(count * 3);
-    
-    let seed = 42;
-    const random = () => {
-      const x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x);
-    };
+  const sphereCount = 1000;
+  const ringCount = 350;
 
-    for (let i = 0; i < count; i++) {
-      // Sphere coordinate distribution
+  // Pure Local LCG random number generator
+  let seed = 42;
+  const random = () => {
+    const x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const sphereData = useMemo(() => {
+    const pos = new Float32Array(sphereCount * 3);
+    const initPos = new Float32Array(sphereCount * 3);
+    for (let i = 0; i < sphereCount; i++) {
       const u = random();
       const v = random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = 1.8 + random() * 0.9;
+      const r = 1.5 + random() * 0.6;
       
-      const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = r * Math.sin(phi) * Math.sin(theta);
-      const z = r * Math.cos(phi);
+      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i * 3 + 2] = r * Math.cos(phi);
       
-      pos[i * 3] = x;
-      pos[i * 3 + 1] = y;
-      pos[i * 3 + 2] = z;
-      
-      initialPos[i * 3] = x;
-      initialPos[i * 3 + 1] = y;
-      initialPos[i * 3 + 2] = z;
+      initPos[i * 3] = pos[i * 3];
+      initPos[i * 3 + 1] = pos[i * 3 + 1];
+      initPos[i * 3 + 2] = pos[i * 3 + 2];
     }
-    return [pos, initialPos];
+    return { pos, initPos };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const ringAData = useMemo(() => {
+    const pos = new Float32Array(ringCount * 3);
+    for (let i = 0; i < ringCount; i++) {
+      const theta = (i / ringCount) * 2.0 * Math.PI;
+      const r = 2.2 + (random() - 0.5) * 0.15;
+      pos[i * 3] = r * Math.cos(theta);
+      pos[i * 3 + 1] = (random() - 0.5) * 0.1;
+      pos[i * 3 + 2] = r * Math.sin(theta);
+    }
+    return pos;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const ringBData = useMemo(() => {
+    const pos = new Float32Array(ringCount * 3);
+    for (let i = 0; i < ringCount; i++) {
+      const theta = (i / ringCount) * 2.0 * Math.PI;
+      const r = 2.4 + (random() - 0.5) * 0.15;
+      pos[i * 3] = (random() - 0.5) * 0.1;
+      pos[i * 3 + 1] = r * Math.cos(theta);
+      pos[i * 3 + 2] = r * Math.sin(theta);
+    }
+    return pos;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFrame((state) => {
-    if (!pointsRef.current) return;
     const time = state.clock.getElapsedTime();
-    const mx = state.pointer.x * 1.5;
-    const my = state.pointer.y * 1.5;
-    const posArr = pointsRef.current.geometry.attributes.position.array as Float32Array;
+    const px = state.pointer.x;
+    const py = state.pointer.y;
 
-    for (let i = 0; i < count; i++) {
-      const idx = i * 3;
-      const ix = initialPositions[idx];
-      const iy = initialPositions[idx + 1];
-      const iz = initialPositions[idx + 2];
+    // 1. Distort core sphere
+    if (sphereRef.current) {
+      const posArr = sphereRef.current.geometry.attributes.position.array as Float32Array;
+      const init = sphereData.initPos;
+      const mouseDist = Math.sqrt(px * px + py * py);
+      const intensity = 0.05 + mouseDist * 0.15;
 
-      const offset = time * 0.3 + (ix + iy) * 0.1;
-      const wave = Math.sin(offset) * 0.12;
+      for (let i = 0; i < sphereCount; i++) {
+        const idx = i * 3;
+        const ix = init[idx];
+        const iy = init[idx + 1];
+        const iz = init[idx + 2];
+        const offset = time * 0.5 + (ix + iy) * 0.2;
+        const wave = Math.sin(offset) * intensity;
 
-      posArr[idx] = ix + Math.cos(time * 0.1 + iy) * 0.08 + mx * wave;
-      posArr[idx + 1] = iy + Math.sin(time * 0.1 + ix) * 0.08 + my * wave;
-      posArr[idx + 2] = iz + wave;
+        posArr[idx] = ix + Math.cos(time * 0.2 + iy) * 0.05 + px * wave;
+        posArr[idx + 1] = iy + Math.sin(time * 0.2 + ix) * 0.05 + py * wave;
+        posArr[idx + 2] = iz + wave;
+      }
+      sphereRef.current.geometry.attributes.position.needsUpdate = true;
+      sphereRef.current.rotation.y = time * 0.04;
+      sphereRef.current.rotation.x = time * 0.02;
     }
 
-    pointsRef.current.geometry.attributes.position.needsUpdate = true;
-    pointsRef.current.rotation.y = time * 0.03;
-    pointsRef.current.rotation.x = time * 0.01;
+    // 2. Rotate Ring A
+    if (ringARef.current) {
+      ringARef.current.rotation.y = time * 0.15;
+      ringARef.current.rotation.x = py * 0.25;
+      ringARef.current.rotation.z = px * 0.25;
+    }
+
+    // 3. Rotate Ring B
+    if (ringBRef.current) {
+      ringBRef.current.rotation.x = -time * 0.12;
+      ringBRef.current.rotation.y = px * 0.25;
+      ringBRef.current.rotation.z = py * 0.25;
+    }
   });
 
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
+    <group>
+      {/* Core Sphere Swarm */}
+      <points ref={sphereRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[sphereData.pos, 3]}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.028}
+          color="#6366f1"
+          transparent
+          opacity={0.8}
+          sizeAttenuation
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.025}
-        color="#818cf8"
-        transparent
-        opacity={0.7}
-        sizeAttenuation
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
+      </points>
+
+      {/* Orbit Ring A */}
+      <points ref={ringARef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[ringAData, 3]}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.02}
+          color="#ec4899"
+          transparent
+          opacity={0.65}
+          sizeAttenuation
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+
+      {/* Orbit Ring B */}
+      <points ref={ringBRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[ringBData, 3]}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.016}
+          color="#22d3ee"
+          transparent
+          opacity={0.7}
+          sizeAttenuation
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+    </group>
   );
 }
 
